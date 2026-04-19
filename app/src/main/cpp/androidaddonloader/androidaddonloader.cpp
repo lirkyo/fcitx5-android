@@ -1,15 +1,14 @@
 /*
  * SPDX-License-Identifier: LGPL-2.1-or-later
  * SPDX-FileCopyrightText: Copyright 2016-2016 CSSlayer <wengxt@gmail.com>
- * SPDX-FileCopyrightText: Copyright 2023-2025 Fcitx5 for Android Contributors
+ * SPDX-FileCopyrightText: Copyright 2023-2026 Fcitx5 for Android Contributors
  * SPDX-FileComment: Modified from https://github.com/fcitx/fcitx5/blob/5.1.14/src/lib/fcitx/addonloader.cpp
  */
 
 #include <exception>
-#include <filesystem>
-#include <memory>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -18,14 +17,17 @@
 #include <fcitx-utils/log.h>
 #include <fcitx-utils/standardpaths.h>
 #include <fcitx-utils/stringutils.h>
+#include <fcitx/addonfactory.h>
 #include <fcitx/addoninfo.h>
 #include <fcitx/addoninstance.h>
-
-#define FCITX_LIBRARY_SUFFIX ".so"
 
 #include "androidaddonloader.h"
 
 namespace fcitx {
+
+namespace {
+constexpr char FCITX_LIBRARY_SUFFIX[] = ".so";
+}
 
 AddonInstance *AndroidSharedLibraryLoader::load(const AddonInfo &info,
                                                 AddonManager *manager) {
@@ -48,13 +50,14 @@ AddonInstance *AndroidSharedLibraryLoader::load(const AddonInfo &info,
             }
             const auto file =
                     stringutils::concat(libname, FCITX_LIBRARY_SUFFIX);
+
+            bool loaded = false;
+
+            // Try the traditional file path approach via StandardPaths.
+            // This works when useLegacyPackaging=true or extractNativeLibs=true,
+            // where libraries are extracted to the filesystem.
             const auto libraryPaths = standardPaths_.locateAll(
                     StandardPathsType::Addon, file);
-            if (libraryPaths.empty()) {
-                FCITX_ERROR() << "Could not locate library " << file
-                              << " for addon " << info.uniqueName() << ".";
-            }
-            bool loaded = false;
             for (const auto &libraryPath: libraryPaths) {
                 Library library(libraryPath);
                 if (library.load(flag)) {
@@ -62,10 +65,33 @@ AddonInstance *AndroidSharedLibraryLoader::load(const AddonInfo &info,
                     loaded = true;
                     break;
                 }
-                FCITX_ERROR()
+                FCITX_DEBUG()
                     << "Failed to load library for addon " << info.uniqueName()
                     << " on " << libraryPath << ". Error: " << library.error();
             }
+
+            // Fallback: try dlopen with just the library filename.
+            // When useLegacyPackaging=false, libraries are stored uncompressed
+            // inside the APK. The Android linker namespace (configured by the
+            // nativeloader) includes the APK library path in its library_path,
+            // so dlopen("libimselector.so") will find it in base.apk!/lib/arm64-v8a/.
+            if (!loaded) {
+                Library library(file);
+                if (library.load(flag)) {
+                    libraries.push_back(std::move(library));
+                    loaded = true;
+                    FCITX_INFO() << "Loaded addon library " << file
+                                 << " via Android linker namespace for addon "
+                                 << info.uniqueName();
+                } else {
+                    FCITX_ERROR()
+                        << "Failed to load library " << file
+                        << " for addon " << info.uniqueName()
+                        << ". StandardPaths and dlopen fallback both failed."
+                        << " dlopen error: " << library.error();
+                }
+            }
+
             if (!loaded) {
                 break;
             }
@@ -81,6 +107,10 @@ AddonInstance *AndroidSharedLibraryLoader::load(const AddonInfo &info,
                               << info.uniqueName() << ". Error: " << e.what();
             }
             iter = registry_.find(info.uniqueName());
+        }
+
+        if (iter == registry_.end()) {
+            FCITX_ERROR() << "Could not load addon " << info.uniqueName();
         }
     }
 
