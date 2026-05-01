@@ -19,7 +19,7 @@ class NativeAppConventionPlugin : NativeBaseConventionPlugin() {
         target.extensions.configure<ApplicationExtension> {
             packaging {
                 jniLibs {
-                    useLegacyPackaging = true
+                    useLegacyPackaging = false
                 }
             }
             buildFeatures {

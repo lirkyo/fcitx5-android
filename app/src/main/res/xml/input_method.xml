@@ -10,5 +10,43 @@
         android:imeSubtypeMode="keyboard"
         android:isAsciiCapable="true"
         android:label="@string/app_name"
-        android:overridesImplicitlyEnabledSubtype="true" />
+        android:overridesImplicitlyEnabledSubtype="true"
+        android:imeSubtypeExtraValue="AsciiCapable,EmojiCapable,TrySuppressingImeSwitcher" />
+
+    <subtype
+        android:icon="@mipmap/ic_launcher"
+        android:imeSubtypeMode="keyboard"
+        android:isAsciiCapable="true"
+        android:label="@string/app_name"
+        android:imeSubtypeLocale="zh-Hans"
+        android:languageTag="zh-Hans"
+    />
+
+    <subtype
+        android:icon="@mipmap/ic_launcher"
+        android:imeSubtypeMode="keyboard"
+        android:isAsciiCapable="true"
+        android:label="@string/app_name"
+        android:imeSubtypeLocale="zh-Hans-CN"
+        android:languageTag="zh-Hans-CN"
+    />
+
+    <subtype
+        android:icon="@mipmap/ic_launcher"
+        android:imeSubtypeMode="keyboard"
+        android:isAsciiCapable="true"
+        android:label="@string/app_name"
+        android:imeSubtypeLocale="ja_JP"
+        android:languageTag="ja-JP"
+    />
+
+    <subtype
+        android:icon="@mipmap/ic_launcher"
+        android:imeSubtypeMode="keyboard"
+        android:isAsciiCapable="true"
+        android:label="@string/app_name"
+        android:imeSubtypeLocale="en_US"
+        android:languageTag="en-US"
+    />
+
 </input-method>

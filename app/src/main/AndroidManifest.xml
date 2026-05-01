@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <original-package android:name="com.android.inputmethod.latin"/>
+
     <!-- remove unused permission from AppCompat -->
     <permission
         android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
@@ -13,6 +15,8 @@
 
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_PROFILES" />
 
     <!-- remove intent queries merged from library manifest (namely Android-Image-Cropper) -->
     <queries tools:node="removeAll" />
@@ -39,6 +43,7 @@
     <application
         android:name=".FcitxApplication"
         android:allowBackup="true"
+        android:crossProfile="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/full_backup_content"
         android:icon="@mipmap/app_icon"
@@ -145,6 +150,15 @@
                 <action android:name="${applicationId}.IPC" />
             </intent-filter>
         </service>
+
+        <receiver
+            android:name=".CrossProfileReceiver"
+            android:crossProfile="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.content.pm.action.CAN_INTERACT_ACROSS_PROFILES_CHANGED"/>
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name=".provider.FcitxDataProvider"
